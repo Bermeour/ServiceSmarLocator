@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banco Demo | Login</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --border:#e2e8f0; --primary:#111827; --danger:#b91c1c; --ok:#15803d;
+      --shadow: 0 10px 25px rgba(2,6,23,.06);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial, sans-serif;background:var(--bg);color:var(--text)}
+    a{color:inherit}
+    .topbar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#111,#666)}
+    .brand h1{font-size:16px;margin:0}
+    .brand p{font-size:13px;margin:0;color:var(--muted)}
+    .nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .nav a{color:var(--muted);text-decoration:none;font-size:14px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn.ghost{background:transparent}
+    .btn:active{transform:translateY(1px)}
+    .container{max-width:1100px;margin:18px auto;padding:0 18px;display:grid;grid-template-columns: 1.1fr .9fr;gap:18px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .card h2{margin:0 0 6px 0}
+    .hint{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
+    .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#fff;margin-top:10px}
+    .form{margin-top:16px;display:flex;flex-direction:column;gap:12px}
+    label{font-size:13px;color:var(--text)}
+    input, select{
+      width:100%;padding:12px 12px;border:1px solid var(--border);
+      border-radius:12px;background:#fff;font-size:14px;outline:none
+    }
+    input:focus,select:focus{border-color:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .row small{color:var(--muted)}
+    .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    .link{border:none;background:transparent;color:#0a58ca;text-decoration:underline;cursor:pointer;padding:0}
+    .result{margin-top:12px;font-size:13px;color:var(--muted)}
+    .ok{color:var(--ok);font-weight:bold}
+    .warn{color:var(--danger);font-weight:bold}
+    details{border:1px dashed var(--border);border-radius:14px;padding:12px;background:#fcfcff}
+    details summary{cursor:pointer;color:var(--muted);font-size:13px}
+    .qa{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    .qa label{display:flex;gap:10px;align-items:flex-start;color:var(--text);font-size:13px}
+    .qa input[type="checkbox"]{width:auto;margin-top:2px}
+    .footerNote{margin-top:12px;color:var(--muted);font-size:12px}
+    .mini{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--border);margin:12px 0}
+    .toast{
+      position:fixed;right:16px;bottom:16px;display:none;min-width:280px;max-width:360px;
+      background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:var(--shadow);z-index:20
+    }
+    .toast .t{font-weight:bold;font-size:13px}
+    .toast .m{margin-top:4px;color:var(--muted);font-size:12px}
+    @media (max-width:900px){ .container{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+  <!-- Header realista con botón "Ingresar" (TRAMPA) -->
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Banco Demo</h1>
+          <p>Portal Personas</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <a href="login.html">Inicio</a>
+        <a href="transfer.html">Transferencias</a>
+        <a href="#">Tarifas</a>
+        <a href="#">Centro de ayuda</a>
+
+        <!-- TRAMPA: "Ingresar" en header (no es el login principal) -->
+        <button class="btn ghost" id="btnHeaderLogin" aria-label="Ingresar header">
+          <span>Ingresar</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Login principal -->
+    <section class="card">
+      <h2>Acceso a Banca</h2>
+      <p class="hint">
+        Ingresa con tu usuario y contraseña. Si no tienes cuenta, crea una en minutos.
+      </p>
+
+      <div class="badge" aria-label="Ambiente demo">
+        🧪 Demo local • pensado para automation + Smart Locator Repair
+      </div>
+
+      <form id="loginForm" class="form" autocomplete="off">
+        <div>
+          <label for="user">Usuario</label>
+          <input id="user" name="user" placeholder="Ej: luis.bermeo" data-testid="input-user" />
+          <div class="mini" style="margin-top:6px">Tip: usa un selector que priorice contexto dentro de <code>#loginForm</code>.</div>
+        </div>
+
+        <div>
+          <label for="pass">Contraseña</label>
+          <input id="pass" name="pass" type="password" placeholder="••••••••" data-testid="input-pass" />
+        </div>
+
+        <div class="row">
+          <label style="display:flex;gap:10px;align-items:center">
+            <input type="checkbox" id="remember" data-testid="chk-remember" />
+            <span>Recordarme</span>
+          </label>
+
+          <select id="channel" aria-label="Canal" data-testid="select-channel">
+            <option>Canal: Web</option>
+            <option>Canal: Móvil</option>
+            <option>Canal: Oficina</option>
+          </select>
+        </div>
+
+        <!-- Zona de login que puede cambiar (para romper XPaths por texto) -->
+        <div id="loginArea" class="actions" style="margin-top:6px"></div>
+
+        <div class="row">
+          <button type="button" class="link" id="btnForgot" data-testid="link-forgot">¿Olvidaste tu contraseña?</button>
+          <a class="link" href="register.html" id="linkRegister" data-testid="link-register">Crear cuenta</a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p id="result" class="result">Resultado: -</p>
+        <p class="footerNote">* Demo local para probar Smart Locator Repair.</p>
+      </form>
+    </section>
+
+    <!-- Panel de QA (colapsable) -->
+    <aside class="card">
+      <h2>Herramientas QA</h2>
+      <p class="hint">
+        Estas opciones existen solo para simular cambios del Front y validar tu “repair”.
+      </p>
+
+      <details open>
+        <summary>Switches para romper el front</summary>
+
+        <div class="qa">
+          <label>
+            <input type="checkbox" id="toggleChange" />
+            Cambiar texto/estructura del login (rompe XPath por texto)
+          </label>
+
+          <label>
+            <input type="checkbox" id="toggleRemoveTestId" />
+            Quitar <code>data-testid</code> del botón principal
+          </label>
+
+          <label>
+            <input type="checkbox" id="toggleRemoveAria" />
+            Quitar <code>aria-label</code> del botón principal
+          </label>
+
+          <label>
+            <input type="checkbox" id="toggleShowHelpModal" />
+            Mostrar modal de ayuda con botón “Ingresar” (trampa)
+          </label>
+
+          <label>
+            <input type="checkbox" id="toggleAddSecondaryButton" />
+            Agregar un segundo botón parecido (“Continuar”) para confundir
+          </label>
+        </div>
+      </details>
+
+      <p class="hint" style="margin-top:12px">
+        Recomendación: tu IA debería priorizar el botón dentro de <code>#loginForm</code> / <code>#loginArea</code>.
+      </p>
+    </aside>
+  </main>
+
+  <!-- Modal (trampa realista) -->
+  <div id="helpModal"
+       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:16px;z-index:10">
+    <div style="background:#fff;border:1px solid var(--border);border-radius:16px;max-width:520px;width:100%;padding:16px;box-shadow:var(--shadow)">
+      <h3 style="margin:0 0 6px 0">Centro de ayuda</h3>
+      <p class="hint" style="margin:0 0 12px 0">
+        Este modal incluye un “Ingresar” para confundir (NO es el login principal).
+      </p>
+      <div class="actions">
+        <button class="btn" id="btnHelpLogin" aria-label="Ingresar ayuda">
+          <span>Ingresar</span>
+        </button>
+        <button class="btn" id="btnCloseModal" data-testid="btn-close-modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <div class="t" id="toastTitle">Info</div>
+    <div class="m" id="toastMsg">-</div>
+  </div>
+
+<script>
+  const result = document.getElementById("result");
+
+  // switches
+  const toggleChange = document.getElementById("toggleChange");
+  const toggleRemoveTestId = document.getElementById("toggleRemoveTestId");
+  const toggleRemoveAria = document.getElementById("toggleRemoveAria");
+  const toggleShowHelpModal = document.getElementById("toggleShowHelpModal");
+  const toggleAddSecondaryButton = document.getElementById("toggleAddSecondaryButton");
+
+  const loginArea = document.getElementById("loginArea");
+
+  // toast helper
+  const toast = document.getElementById("toast");
+  const toastTitle = document.getElementById("toastTitle");
+  const toastMsg = document.getElementById("toastMsg");
+  let toastTimer = null;
+  function showToast(title, msg) {
+    toastTitle.textContent = title;
+    toastMsg.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.style.display = "none", 2400);
+  }
+
+  function buildMainButtonAttrs() {
+    const attrs = { class:"btn primary", id:"btnLoginMain" };
+
+    if (!toggleRemoveAria.checked)  attrs["aria-label"] = "Ingresar";
+    if (!toggleRemoveTestId.checked) attrs["data-testid"] = "btn-login";
+
+    return Object.entries(attrs).map(([k,v]) => `${k}="${v}"`).join(" ");
+  }
+
+  function renderLoginArea() {
+    const changed = toggleChange.checked;
+    const mainAttrs = buildMainButtonAttrs();
+    const addSecondary = toggleAddSecondaryButton.checked;
+
+    if (!changed) {
+      loginArea.innerHTML = `
+        <div style="width:100%">
+          <label style="display:block;margin-bottom:6px;color:#64748b;font-size:13px">Ingresar</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button type="button" ${mainAttrs}><span>Ingresar</span></button>
+            ${addSecondary ? `<button type="button" class="btn" id="btnContinueTrap"><span>Continuar</span></button>` : ""}
+          </div>
+        </div>
+      `;
+    } else {
+      loginArea.innerHTML = `
+        <div style="width:100%">
+          <label style="display:block;margin-bottom:6px;color:#64748b;font-size:13px">Acceder</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button type="button" ${mainAttrs}><span>Acceder ahora</span></button>
+            ${addSecondary ? `<button type="button" class="btn" id="btnContinueTrap"><span>Continuar</span></button>` : ""}
+          </div>
+        </div>
+      `;
+    }
+
+    // click del botón principal
+    const btn = document.getElementById("btnLoginMain");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        result.innerHTML = `Resultado: <span class="ok">CLICK OK (LOGIN PRINCIPAL)</span>`;
+        showToast("Login", "Login principal detectado.");
+      });
+    }
+
+    // botón secundario (trampa suave)
+    const trap = document.getElementById("btnContinueTrap");
+    if (trap) {
+      trap.addEventListener("click", () => {
+        result.innerHTML = `Resultado: <span class="warn">CLICK CONTINUAR (trampa)</span>`;
+        showToast("Ojo", "Ese botón no es el login real.");
+      });
+    }
+  }
+
+  // trampas
+  document.getElementById("btnHeaderLogin").addEventListener("click", () => {
+    result.innerHTML = `Resultado: <span class="warn">CLICK HEADER (trampa)</span>`;
+    showToast("Header", "No es el botón principal.");
+  });
+
+  document.getElementById("btnForgot").addEventListener("click", () => {
+    result.innerHTML = `Resultado: <span class="ok">CLICK OK (Recuperación)</span>`;
+    showToast("Recuperación", "Flujo de recuperar contraseña.");
+  });
+
+  // modal
+  const helpModal = document.getElementById("helpModal");
+  document.getElementById("btnCloseModal").addEventListener("click", () => helpModal.style.display = "none");
+  document.getElementById("btnHelpLogin").addEventListener("click", () => {
+    result.innerHTML = `Resultado: <span class="warn">CLICK MODAL (trampa)</span>`;
+    showToast("Modal", "No es el login principal.");
+  });
+
+  toggleShowHelpModal.addEventListener("change", () => {
+    helpModal.style.display = toggleShowHelpModal.checked ? "flex" : "none";
+  });
+
+  // re-render al cambiar switches
+  [toggleChange, toggleRemoveTestId, toggleRemoveAria, toggleAddSecondaryButton].forEach(x =>
+    x.addEventListener("change", () => {
+      result.textContent = "Resultado: -";
+      renderLoginArea();
+    })
+  );
+
+  // init
+  renderLoginArea();
+</script>
+
+</body>
+</html>
+
+

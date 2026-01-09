@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banco Demo | Transferencias</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --border:#e2e8f0; --primary:#111827; --danger:#b91c1c; --ok:#15803d;
+      --shadow: 0 10px 25px rgba(2,6,23,.06);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .topbar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+    .wrap{max-width:1180px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#111,#666)}
+    .nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+    .nav a{color:var(--muted);text-decoration:none;font-size:14px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn.danger{background:#fff;border-color:#fecaca;color:var(--danger)}
+    .btn:active{transform:translateY(1px)}
+    .container{max-width:1180px;margin:18px auto;padding:0 18px;display:grid;grid-template-columns: 1fr .9fr;gap:18px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    h2{margin:0 0 6px 0}
+    .hint{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
+    label{font-size:13px;color:var(--text);display:block;margin-bottom:6px}
+    input,select,textarea{
+      width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;
+      font-size:14px;outline:none
+    }
+    textarea{min-height:86px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .mini{font-size:12px;color:var(--muted)}
+    .ok{color:var(--ok);font-weight:bold}
+    .warn{color:var(--danger);font-weight:bold}
+    .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#fff;margin-top:10px}
+    .divider{height:1px;background:var(--border);margin:12px 0}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:10px}
+    td,th{font-size:13px;text-align:left;padding:10px 12px}
+    thead th{color:var(--muted);font-weight:bold}
+    tbody tr{background:#fff;border:1px solid var(--border)}
+    tbody tr td:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
+    tbody tr td:last-child{border-top-right-radius:12px;border-bottom-right-radius:12px}
+    .chip{display:inline-flex;gap:6px;align-items:center;font-size:12px;border:1px solid var(--border);padding:4px 10px;border-radius:999px;color:var(--muted)}
+    details{border:1px dashed var(--border);border-radius:14px;padding:12px;background:#fcfcff}
+    details summary{cursor:pointer;color:var(--muted);font-size:13px}
+    .qa{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    .qa label{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+    .qa input[type="checkbox"]{width:auto;margin-top:2px}
+    .modal{
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
+      align-items:center;justify-content:center;padding:16px;z-index:10
+    }
+    .modal .box{
+      max-width:560px;width:100%;background:#fff;border:1px solid var(--border);border-radius:16px;
+      padding:16px;box-shadow:var(--shadow)
+    }
+    .toast{
+      position:fixed;right:16px;bottom:16px;display:none;min-width:300px;max-width:380px;
+      background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:var(--shadow);z-index:20
+    }
+    .toast .t{font-weight:bold;font-size:13px}
+    .toast .m{margin-top:4px;color:var(--muted);font-size:12px}
+    @media (max-width:980px){ .container{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div style="font-weight:bold">Banco Demo</div>
+          <div style="font-size:13px;color:var(--muted)">Transferencias y pagos</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <a href="login.html">Inicio</a>
+        <a href="register.html">Registro</a>
+        <a href="transfer.html">Transferencias</a>
+
+        <!-- TRAMPA: Botón “Pagar” arriba que NO envía el formulario -->
+        <button class="btn ghost" id="btnHeaderPay" aria-label="Pagar header">
+          <span>Pagar</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Formulario principal -->
+    <section class="card">
+      <h2>Hacer una transferencia</h2>
+      <p class="hint">
+        Simula un flujo real: selecciona cuenta origen/destino, tipo, monto, fecha de ejecución y confirma.
+      </p>
+
+      <div class="pill">🏦 Demo realista • con trampas + cambios para probar reparaciones</div>
+
+      <form id="transferForm" autocomplete="off">
+        <div class="grid">
+          <div>
+            <label for="fromAcc">Cuenta origen</label>
+            <select id="fromAcc" data-testid="select-from-account">
+              <option value="">Selecciona…</option>
+              <option value="A-001">Ahorros • **** 1201</option>
+              <option value="C-002">Corriente • **** 9982</option>
+              <option value="N-003">Nómina • **** 4407</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="toAcc">Destino</label>
+            <select id="toAcc" data-testid="select-to-account">
+              <option value="">Selecciona…</option>
+              <option value="OWN">Mis cuentas</option>
+              <option value="THIRD">Terceros</option>
+              <option value="BANK">Otro banco</option>
+            </select>
+          </div>
+
+          <div id="destTypeArea">
+            <label for="destType">Tipo de cuenta destino</label>
+            <select id="destType" data-testid="select-dest-type">
+              <option value="AHO">Ahorros</option>
+              <option value="COR">Corriente</option>
+            </select>
+          </div>
+
+          <div id="destIdArea">
+            <label for="destId">Documento destinatario</label>
+            <input id="destId" placeholder="CC / CE / PP" data-testid="input-dest-id" />
+          </div>
+
+          <div id="destAccArea">
+            <label for="destAcc">Número de cuenta destino</label>
+            <input id="destAcc" placeholder="Ej: 0123456789" inputmode="numeric" data-testid="input-dest-acc" />
+          </div>
+
+          <div>
+            <label for="amount">Monto</label>
+            <input id="amount" placeholder="Ej: 250000" inputmode="numeric" data-testid="input-amount" />
+            <div class="mini" style="margin-top:6px">Puedes validar formato, límites, etc.</div>
+          </div>
+
+          <div>
+            <label for="scheduleDate">Fecha de ejecución</label>
+            <input id="scheduleDate" type="date" data-testid="input-schedule-date" />
+          </div>
+
+          <div>
+            <label for="scheduleTime">Hora (opcional)</label>
+            <input id="scheduleTime" type="datetime-local" data-testid="input-schedule-datetime" />
+          </div>
+
+          <div>
+            <label for="purpose">Concepto / descripción</label>
+            <textarea id="purpose" placeholder="Ej: Pago arriendo enero" data-testid="textarea-purpose"></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row" style="margin-top:8px">
+          <div style="font-size:13px;color:var(--text);font-weight:bold">Método de confirmación</div>
+          <label style="display:flex;gap:10px;align-items:center">
+            <input type="radio" name="auth" value="otp" checked data-testid="radio-auth-otp" />
+            OTP
+          </label>
+          <label style="display:flex;gap:10px;align-items:center">
+            <input type="radio" name="auth" value="push" data-testid="radio-auth-push" />
+            Push
+          </label>
+          <label style="display:flex;gap:10px;align-items:center">
+            <input type="radio" name="auth" value="token" data-testid="radio-auth-token" />
+            Token
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <label style="display:flex;gap:10px;align-items:center">
+            <input type="checkbox" id="saveBenef" data-testid="chk-save-benef" />
+            Guardar destinatario como favorito
+          </label>
+
+          <span class="chip" id="feeChip" aria-label="Costo estimado">Costo: $0</span>
+        </div>
+
+        <!-- Área donde se renderiza el botón principal (y puede cambiar) -->
+        <div id="submitArea" class="actions"></div>
+
+        <p id="result" class="hint" style="margin-top:12px">Resultado: -</p>
+      </form>
+    </section>
+
+    <!-- Lado derecho: resumen + tabla + QA switches -->
+    <aside class="card">
+      <h2>Actividad reciente</h2>
+      <p class="hint">Tabla simple para pruebas (filtrado, clicks, etc.).</p>
+
+      <div class="row" style="margin-top:12px">
+        <input id="searchMov" placeholder="Buscar por concepto…" data-testid="input-search-mov" />
+        <button class="btn" id="btnSearchTrap" aria-label="Buscar" data-testid="btn-search">
+          Buscar
+        </button>
+      </div>
+
+      <table aria-label="Movimientos">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Monto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="movBody">
+          <!-- rows injected -->
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2>Herramientas QA</h2>
+      <p class="hint">Switches para romper selectores / estructura.</p>
+
+      <details open>
+        <summary>Switches</summary>
+        <div class="qa">
+          <label>
+            <input type="checkbox" id="toggleChangePrimaryText" />
+            Cambiar texto del botón principal (rompe XPath por texto)
+          </label>
+          <label>
+            <input type="checkbox" id="toggleRemoveTestIdPrimary" />
+            Quitar <code>data-testid</code> del botón principal
+          </label>
+          <label>
+            <input type="checkbox" id="toggleRemoveAriaPrimary" />
+            Quitar <code>aria-label</code> del botón principal
+          </label>
+          <label>
+            <input type="checkbox" id="toggleShowConfirmModal" />
+            Mostrar modal de confirmación con botón “Confirmar” (trampa)
+          </label>
+          <label>
+            <input type="checkbox" id="toggleReorderFields" />
+            Reordenar campos destino (rompe XPaths por índice)
+          </label>
+        </div>
+      </details>
+
+      <p class="hint" style="margin-top:12px">
+        Recomendación: tu IA debería buscar el botón primario dentro de <code>#transferForm</code> y <code>#submitArea</code>.
+      </p>
+    </aside>
+  </main>
+
+  <!-- Modal de confirmación (trampa) -->
+  <div id="confirmModal" class="modal" aria-hidden="true">
+    <div class="box">
+      <h3 style="margin:0 0 6px 0">Confirmación</h3>
+      <p class="hint" style="margin:0 0 12px 0">
+        Modal con botón “Confirmar” para confundir (NO es el submit real del formulario).
+      </p>
+      <div class="actions">
+        <button class="btn primary" id="btnModalConfirm" aria-label="Confirmar modal">
+          Confirmar
+        </button>
+        <button class="btn" id="btnModalClose" data-testid="btn-modal-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <div class="t" id="toastTitle">Info</div>
+    <div class="m" id="toastMsg">-</div>
+  </div>
+
+<script>
+  // ===== helpers =====
+  const result = document.getElementById("result");
+  const feeChip = document.getElementById("feeChip");
+
+  const toast = document.getElementById("toast");
+  const toastTitle = document.getElementById("toastTitle");
+  const toastMsg = document.getElementById("toastMsg");
+  let toastTimer = null;
+  function showToast(title, msg) {
+    toastTitle.textContent = title;
+    toastMsg.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.style.display = "none", 2400);
+  }
+  function setResult(html) { result.innerHTML = "Resultado: " + html; }
+
+  // ===== traps =====
+  document.getElementById("btnHeaderPay").addEventListener("click", () => {
+    setResult("<span class='warn'>CLICK HEADER (trampa)</span>");
+    showToast("Header", "Ese botón no envía la transferencia real.");
+  });
+
+  // ===== switches =====
+  const toggleChangePrimaryText = document.getElementById("toggleChangePrimaryText");
+  const toggleRemoveTestIdPrimary = document.getElementById("toggleRemoveTestIdPrimary");
+  const toggleRemoveAriaPrimary = document.getElementById("toggleRemoveAriaPrimary");
+  const toggleShowConfirmModal = document.getElementById("toggleShowConfirmModal");
+  const toggleReorderFields = document.getElementById("toggleReorderFields");
+
+  const submitArea = document.getElementById("submitArea");
+  const confirmModal = document.getElementById("confirmModal");
+  const btnModalClose = document.getElementById("btnModalClose");
+  const btnModalConfirm = document.getElementById("btnModalConfirm");
+
+  btnModalClose.addEventListener("click", () => {
+    confirmModal.style.display = "none";
+    confirmModal.setAttribute("aria-hidden", "true");
+  });
+
+  btnModalConfirm.addEventListener("click", () => {
+    setResult("<span class='warn'>CLICK MODAL (trampa)</span>");
+    showToast("Modal", "Ese confirmar NO ejecuta el submit real.");
+  });
+
+  toggleShowConfirmModal.addEventListener("change", () => {
+    confirmModal.style.display = toggleShowConfirmModal.checked ? "flex" : "none";
+    confirmModal.setAttribute("aria-hidden", toggleShowConfirmModal.checked ? "false" : "true");
+  });
+
+  // ===== dynamic fee calc (simple demo) =====
+  const amountInput = document.getElementById("amount");
+  amountInput.addEventListener("input", () => {
+    const v = Number((amountInput.value || "").replace(/[^\d]/g,"")) || 0;
+    const fee = v > 0 ? Math.min(9500, Math.round(v * 0.002)) : 0; // 0.2% cap demo
+    feeChip.textContent = "Costo: $" + fee.toLocaleString("es-CO");
+  });
+
+  // ===== field reorder (break index-based locators) =====
+  const destTypeArea = document.getElementById("destTypeArea");
+  const destIdArea = document.getElementById("destIdArea");
+  const destAccArea = document.getElementById("destAccArea");
+
+  function applyReorder() {
+    // we reorder inside the grid by moving nodes
+    const grid = document.querySelector(".grid");
+    if (!grid) return;
+
+    // ensure they are present
+    const nodes = [destTypeArea, destIdArea, destAccArea].filter(Boolean);
+
+    // remove and reinsert in a different order when enabled
+    nodes.forEach(n => n.parentNode === grid && grid.removeChild(n));
+
+    if (toggleReorderFields.checked) {
+      // new order
+      grid.insertBefore(destAccArea, grid.children[2] || null);
+      grid.insertBefore(destIdArea, destAccArea);
+      grid.insertBefore(destTypeArea, destIdArea);
+    } else {
+      // original-ish order
+      grid.insertBefore(destTypeArea, grid.children[2] || null);
+      grid.insertBefore(destIdArea, destTypeArea.nextSibling);
+      grid.insertBefore(destAccArea, destIdArea.nextSibling);
+    }
+  }
+
+  // ===== render primary submit button (can change attrs/text) =====
+  function buildPrimaryAttrs() {
+    const attrs = { class:"btn primary", id:"btnSubmitTransfer", type:"button" };
+    if (!toggleRemoveAriaPrimary.checked) attrs["aria-label"] = "Confirmar transferencia";
+    if (!toggleRemoveTestIdPrimary.checked) attrs["data-testid"] = "btn-submit-transfer";
+    return Object.entries(attrs).map(([k,v]) => `${k}="${v}"`).join(" ");
+  }
+
+  function renderSubmitArea() {
+    const changedText = toggleChangePrimaryText.checked;
+    const attrs = buildPrimaryAttrs();
+
+    // add a secondary similar button to confuse (always present)
+    const secondary = `<button type="button" class="btn" id="btnPreview" data-testid="btn-preview"><span>Previsualizar</span></button>`;
+
+    submitArea.innerHTML = `
+      ${secondary}
+      <button ${attrs}><span>${changedText ? "Enviar ahora" : "Confirmar"}</span></button>
+      <button type="button" class="btn danger" id="btnClear" data-testid="btn-clear">Limpiar</button>
+    `;
+
+    document.getElementById("btnPreview").addEventListener("click", () => {
+      setResult("<span class='ok'>CLICK OK (Previsualización)</span>");
+      showToast("Preview", "Previsualización generada (demo).");
+    });
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+      document.getElementById("transferForm").reset();
+      feeChip.textContent = "Costo: $0";
+      setResult("-");
+      showToast("Formulario", "Campos limpiados.");
+    });
+
+    const btnSubmit = document.getElementById("btnSubmitTransfer");
+    btnSubmit.addEventListener("click", () => submitTransfer());
+  }
+
+  // ===== submit logic =====
+  function submitTransfer() {
+    const fromAcc = document.getElementById("fromAcc").value;
+    const toAcc = document.getElementById("toAcc").value;
+    const destAcc = document.getElementById("destAcc").value.trim();
+    const amount = Number((document.getElementById("amount").value || "").replace(/[^\d]/g,"")) || 0;
+
+    if (!fromAcc) { setResult("<span class='warn'>Selecciona cuenta origen</span>"); return; }
+    if (!toAcc) { setResult("<span class='warn'>Selecciona destino</span>"); return; }
+    if (!destAcc || destAcc.length < 6) { setResult("<span class='warn'>Cuenta destino inválida</span>"); return; }
+    if (amount <= 0) { setResult("<span class='warn'>Monto inválido</span>"); return; }
+
+    setResult("<span class='ok'>CLICK OK (TRANSFERENCIA REAL)</span>");
+    showToast("Transferencia", "Transferencia enviada (demo).");
+
+    // add row to movements
+    addMovement({
+      date: new Date().toISOString().slice(0,10),
+      concept: (document.getElementById("purpose").value.trim() || "Transferencia"),
+      amount
+    });
+  }
+
+  // ===== movements table =====
+  const movBody = document.getElementById("movBody");
+  const movements = [
+    { date:"2026-01-08", concept:"Pago servicios", amount: 180000 },
+    { date:"2026-01-06", concept:"Transferencia a tercero", amount: 350000 },
+    { date:"2026-01-03", concept:"Recarga", amount: 50000 }
+  ];
+
+  function renderMovements(list) {
+    movBody.innerHTML = list.map((m, idx) => `
+      <tr>
+        <td>${m.date}</td>
+        <td>${escapeHtml(m.concept)}</td>
+        <td>$${Number(m.amount).toLocaleString("es-CO")}</td>
+        <td>
+          <!-- TRAMPA: botón por fila con texto "Confirmar" (NO es el submit principal) -->
+          <button class="btn" data-testid="btn-row-confirm" aria-label="Confirmar fila" data-row="${idx}">
+            Confirmar
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    // row trap
+    document.querySelectorAll('[data-testid="btn-row-confirm"]').forEach(btn => {
+      btn.addEventListener("click", () => {
+        setResult("<span class='warn'>CLICK TABLA (trampa)</span>");
+        showToast("Tabla", "Ese Confirmar es un botón de fila (trampa).");
+      });
+    });
+  }
+
+  function addMovement(m) {
+    movements.unshift(m);
+    renderMovements(movements);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+  }
+
+  // search trap button (it does filter but is not the main action)
+  document.getElementById("btnSearchTrap").addEventListener("click", () => {
+    const q = document.getElementById("searchMov").value.trim().toLowerCase();
+    const filtered = q ? movements.filter(x => x.concept.toLowerCase().includes(q)) : movements;
+    renderMovements(filtered);
+    setResult("<span class='ok'>CLICK OK (Buscar)</span>");
+  });
+
+  // re-render on switch changes
+  [toggleChangePrimaryText, toggleRemoveTestIdPrimary, toggleRemoveAriaPrimary].forEach(x => {
+    x.addEventListener("change", () => {
+      setResult("-");
+      renderSubmitArea();
+    });
+  });
+
+  toggleReorderFields.addEventListener("change", () => applyReorder());
+
+  // init
+  renderSubmitArea();
+  applyReorder();
+  renderMovements(movements);
+</script>
+</body>
+</html>

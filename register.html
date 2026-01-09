@@ -1,0 +1,213 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banco Demo | Crear cuenta</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;
+      --primary:#111827;--ok:#15803d;--danger:#b91c1c;--shadow:0 10px 25px rgba(2,6,23,.06)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .topbar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+    .wrap{max-width:980px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#111,#666)}
+    .card{max-width:980px;margin:18px auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .hint{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    label{font-size:13px;color:var(--text);display:block;margin-bottom:6px}
+    input,select{
+      width:100%;padding:12px 12px;border:1px solid var(--border);
+      border-radius:12px;background:#fff;font-size:14px;outline:none
+    }
+    input:focus,select:focus{border-color:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)}
+    .row{margin-top:12px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn:active{transform:translateY(1px)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    .link{border:none;background:transparent;color:#0a58ca;text-decoration:underline;cursor:pointer;padding:0}
+    .ok{color:var(--ok);font-weight:bold}
+    .bad{color:var(--danger);font-weight:bold}
+    .sectionTitle{margin-top:14px;font-weight:bold}
+    .mini{font-size:12px;color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#fff;margin-top:10px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div style="font-weight:bold">Banco Demo</div>
+          <div style="font-size:13px;color:var(--muted)">Registro</div>
+        </div>
+      </div>
+      <nav style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <a class="link" href="login.html" data-testid="link-back-login">Volver a login</a>
+        <a class="link" href="transfer.html">Ir a transferencias</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="card">
+    <h2 style="margin:0 0 6px 0">Crear cuenta</h2>
+    <p class="hint">Completa tus datos para crear un usuario nuevo.</p>
+
+    <div class="pill">🧾 Campos reales • radios • selects • validaciones</div>
+
+    <form id="registerForm" autocomplete="off">
+      <div class="sectionTitle">Datos personales</div>
+      <div class="grid">
+        <div>
+          <label for="fullName">Nombre completo</label>
+          <input id="fullName" placeholder="Luis David Bermeo" data-testid="input-fullname" />
+        </div>
+        <div>
+          <label for="email">Correo</label>
+          <input id="email" type="email" placeholder="correo@ejemplo.com" data-testid="input-email" />
+        </div>
+
+        <div>
+          <label for="docType">Tipo de documento</label>
+          <select id="docType" data-testid="select-doc-type">
+            <option value="CC">Cédula (CC)</option>
+            <option value="CE">Cédula de extranjería (CE)</option>
+            <option value="PP">Pasaporte (PP)</option>
+          </select>
+        </div>
+        <div>
+          <label for="docNum">Número de documento</label>
+          <input id="docNum" placeholder="1234567890" inputmode="numeric" data-testid="input-docnum" />
+        </div>
+
+        <div>
+          <label for="birth">Fecha de nacimiento</label>
+          <input id="birth" type="date" data-testid="input-birth" />
+          <div class="mini" style="margin-top:6px">Calendario nativo (ideal para tests).</div>
+        </div>
+        <div>
+          <label for="phone">Celular</label>
+          <input id="phone" placeholder="3001234567" inputmode="tel" data-testid="input-phone" />
+        </div>
+
+        <div>
+          <label for="city">Ciudad</label>
+          <select id="city" data-testid="select-city">
+            <option>Bogotá</option>
+            <option>Medellín</option>
+            <option>Cali</option>
+            <option>Barranquilla</option>
+            <option>Otra</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="address">Dirección</label>
+          <input id="address" placeholder="Calle 123 #45-67" data-testid="input-address" />
+        </div>
+      </div>
+
+      <div class="sectionTitle">Preferencias</div>
+      <div class="row">
+        <div style="font-size:13px;color:var(--text);margin-bottom:8px">¿Cómo prefieres recibir notificaciones?</div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px">
+          <input type="radio" name="notify" value="email" checked data-testid="radio-notify-email" /> Email
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:6px">
+          <input type="radio" name="notify" value="sms" data-testid="radio-notify-sms" /> SMS
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:6px">
+          <input type="radio" name="notify" value="whatsapp" data-testid="radio-notify-whatsapp" /> WhatsApp
+        </label>
+      </div>
+
+      <div class="row">
+        <label style="display:flex;gap:10px;align-items:center;font-size:14px">
+          <input type="checkbox" id="marketing" data-testid="chk-marketing" />
+          Acepto recibir ofertas y novedades (opcional)
+        </label>
+      </div>
+
+      <div class="sectionTitle">Seguridad</div>
+      <div class="grid">
+        <div>
+          <label for="pass1">Contraseña</label>
+          <input id="pass1" type="password" placeholder="••••••••" data-testid="input-pass1" />
+          <div class="mini" style="margin-top:6px">Mínimo 6 caracteres (demo).</div>
+        </div>
+        <div>
+          <label for="pass2">Confirmar contraseña</label>
+          <input id="pass2" type="password" placeholder="••••••••" data-testid="input-pass2" />
+        </div>
+      </div>
+
+      <div class="row">
+        <label style="display:flex;gap:10px;align-items:center;font-size:14px">
+          <input type="checkbox" id="terms" data-testid="chk-terms" />
+          Acepto términos y condiciones
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn primary" id="btnCreateAccount" data-testid="btn-create-account" aria-label="Crear cuenta">
+          Crear cuenta
+        </button>
+        <a class="link" href="login.html" data-testid="link-have-account">Ya tengo cuenta</a>
+      </div>
+
+      <p id="result" class="hint" style="margin-top:12px">Resultado: -</p>
+    </form>
+  </main>
+
+<script>
+  const result = document.getElementById("result");
+
+  function setResult(html) { result.innerHTML = "Resultado: " + html; }
+
+  document.getElementById("btnCreateAccount").addEventListener("click", () => {
+    const fullName = document.getElementById("fullName").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const docNum = document.getElementById("docNum").value.trim();
+
+    const p1 = document.getElementById("pass1").value.trim();
+    const p2 = document.getElementById("pass2").value.trim();
+    const terms = document.getElementById("terms").checked;
+
+    if (!fullName || fullName.length < 3) {
+      setResult("<span class='bad'>Nombre inválido</span>");
+      return;
+    }
+    if (!email.includes("@")) {
+      setResult("<span class='bad'>Correo inválido</span>");
+      return;
+    }
+    if (!docNum || docNum.length < 6) {
+      setResult("<span class='bad'>Documento inválido</span>");
+      return;
+    }
+    if (!terms) {
+      setResult("<span class='bad'>Debes aceptar términos</span>");
+      return;
+    }
+    if (!p1 || p1.length < 6) {
+      setResult("<span class='bad'>Contraseña muy corta</span>");
+      return;
+    }
+    if (p1 !== p2) {
+      setResult("<span class='bad'>Las contraseñas no coinciden</span>");
+      return;
+    }
+
+    setResult("<span class='ok'>Cuenta creada (demo)</span> • ahora puedes ir a Transferencias");
+  });
+</script>
+
+</body>
+</html>
