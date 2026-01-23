@@ -26,6 +26,9 @@ class RepairService:
 
         base_tag = (req.baseline.tag or "button").strip()
         base_text = (req.baseline.text or "").strip()
+        base_intent = (getattr(req.baseline, "intent", None) or "").strip()
+        base_text_contains = list(getattr(req.baseline, "textContains", None) or [])
+        base_meta = dict(getattr(req.baseline, "meta", None) or {})
         base_attrs = req.baseline.attrs or {}
 
         ctx = req.context
@@ -41,6 +44,12 @@ class RepairService:
             dump = ctx.dict() if hasattr(ctx, "dict") else ctx
 
         print(">>> CONTEXT:", dump)
+        print(">>> BASELINE.intent:", base_intent)
+        print(">>> BASELINE.textContains:", base_text_contains)
+        print(">>> BASELINE.meta:", base_meta)
+        print(">>> BASELINE_INTENT:", base_intent)
+        print(">>> BASELINE_TEXT_CONTAINS:", base_text_contains)
+        print(">>> BASELINE_META:", base_meta)
         # opcional: log rápido de anchors resueltos
         try:
             print(">>> ANCHORS_RESOLVED:", [(lbl, w) for _, lbl, w in anchors])
@@ -61,7 +70,10 @@ class RepairService:
                 base_tag=base_tag,
                 base_text=base_text,
                 base_attrs=base_attrs,
-                anchors=anchors  # ✅ ahora sí coincide con ScoreEngine
+                anchors=anchors,
+                base_intent=base_intent,
+                base_text_contains=base_text_contains,
+                base_meta=base_meta,
             )
 
             if score < 40:
@@ -106,6 +118,15 @@ class RepairService:
                         "classSignals": signals.get("classSignals", []),
                         "textHit": signals.get("textHit", False),
                         "anchorHits": signals.get("anchorHits", [])
+                        ,
+                        # ✅ Nuevos: evidencian uso de intent/textContains/meta
+                        "textContainsMatched": signals.get("textContainsMatched", 0),
+                        "textContainsTotal": signals.get("textContainsTotal", 0),
+                        "intentBonus": signals.get("intentBonus", 0),
+                        "metaBonus": signals.get("metaBonus", 0),
+                        "baselineIntent": base_intent,
+                        "baselineTextContains": base_text_contains,
+                        "baselineMeta": base_meta,
                     }
                 }
 

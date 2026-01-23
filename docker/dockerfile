@@ -1,0 +1,27 @@
+# Imagen base
+FROM python:3.12-slim
+
+# Buenas prácticas para contenedores
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /usr/src/app
+
+# (Opcional) certificados corporativos si los necesitas
+# COPY docker/certs/rootca.crt /usr/local/share/ca-certificates/rootca.crt
+# RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+#     && update-ca-certificates \
+#     && rm -rf /var/lib/apt/lists/*
+
+# Dependencias Python
+COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia el código
+COPY . /usr/src/app
+
+# Puerto interno del contenedor
+EXPOSE 8000
+
+# Arranque FastAPI (ajusta app.main:app si tu entrypoint es diferente)
+CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000"]

@@ -22,6 +22,15 @@ class AnchorSpec(BaseModel):
 class Baseline(BaseModel):
     tag: Optional[str] = None
     text: Optional[str] = None
+    # ✅ NUEVO: intención funcional (ej: permissions_error_message)
+    intent: Optional[str] = None
+
+    # ✅ NUEVO: fragmentos de texto requeridos (contains, AND)
+    textContains: List[str] = Field(default_factory=list)
+
+    # ✅ NUEVO: metadatos de negocio (severity, businessCase, etc.)
+    meta: Dict[str, str] = Field(default_factory=dict)
+
     # ✅ pon default_factory para evitar None checks infinitos
     attrs: Dict[str, str] = Field(default_factory=dict)
 
