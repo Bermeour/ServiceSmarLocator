@@ -87,6 +87,20 @@ class AdvancedSelectorBuilder:
         if container_id and str(container_id).strip():
             return f"//*[@id={safe_xpath_literal(str(container_id).strip())}]"
 
+        # ✅ containerClass como último recurso de scoping
+        container_class = getattr(context, "containerClass", None)
+        if container_class and str(container_class).strip():
+            expr = str(container_class).strip()
+            # toma la primera alternativa (OR) para no explotar el XPath
+            first = expr.split(",", 1)[0].strip()
+            classes = [c.strip() for c in first.split() if c.strip()]
+            if classes:
+                cond = " and ".join([
+                    f"contains(concat(' ', normalize-space(@class), ' '), {safe_xpath_literal(' ' + c + ' ')})"
+                    for c in classes[:3]
+                ])
+                return f"//*[ {cond} ]"
+
         return ""
 
     def _select_good_classes(self, classes: list[str]) -> list[str]:

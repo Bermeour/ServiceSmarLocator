@@ -14,8 +14,10 @@ class AnchorSpec(BaseModel):
     weight:
       - peso relativo para proximidad (0..200 recomendado)
     """
-    type: Literal["id", "text"] = Field(...)
+    # ✅ Ampliado: css/xpath para anchors más expresivos (multi-app)
+    type: Literal["id", "text", "css", "xpath"] = Field(...)
     value: str = Field(..., min_length=1)
+    label: Optional[str] = None
     weight: int = Field(30, ge=0, le=200)
 
 
@@ -37,6 +39,7 @@ class Baseline(BaseModel):
 
 class Context(BaseModel):
     containerId: Optional[str] = None
+    containerClass: Optional[str] = None
     formId: Optional[str] = None
 
     # ✅ default_factory evita None

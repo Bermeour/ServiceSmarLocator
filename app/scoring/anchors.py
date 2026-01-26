@@ -108,4 +108,32 @@ class AnchorResolver:
                     if el:
                         out.append((el, label, a_weight))
 
+                elif a_type == "css":
+                    try:
+                        el = soup.select_one(str(a_value))
+                    except Exception:
+                        el = None
+                    if el:
+                        out.append((el, label, a_weight))
+
+                elif a_type == "xpath":
+                    # BeautifulSoup no soporta XPath completo.
+                    # Soportamos un caso común: //*[@id='x']
+                    try:
+                        v = str(a_value)
+                        if "@id" in v and "'" in v:
+                            # extrae id entre comillas simples
+                            _id = v.split("@id", 1)[1]
+                            _id = _id.split("'", 2)
+                            if len(_id) >= 2:
+                                el = find_anchor_by_id(soup, _id[1])
+                            else:
+                                el = None
+                        else:
+                            el = None
+                    except Exception:
+                        el = None
+                    if el:
+                        out.append((el, label, a_weight))
+
         return out
