@@ -79,7 +79,7 @@ class RepairService:
             if score < 40:
                 continue
 
-            locators = self.selector_builder.build_locators(el, base_tag, base_text, context=ctx)
+            locators = self.selector_builder.build_locators(el, base_tag, base_text, context=ctx, base_meta=base_meta)
             if not locators:
                 continue
 

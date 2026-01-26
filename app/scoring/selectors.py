@@ -6,7 +6,7 @@ class SelectorBuilder:
     def __init__(self):
         self.advanced = AdvancedSelectorBuilder()
 
-    def build_locators(self, el: Tag, base_tag: str, base_text: str = "", context=None):
+    def build_locators(self, el: Tag, base_tag: str, base_text: str = "", context=None, base_meta=None):
         locators = []
 
         el_id = el.get("id")
@@ -33,6 +33,9 @@ class SelectorBuilder:
                 suf = self._id_stable_suffix(el_id)
                 if suf:
                     locators.append(("css", f"{tag}[id$='{suf}']", "css por id$=sufijo (anti-dinámico)", 3, "DYNAMIC_ID_SUFFIX"))
+                    # ✅ Si el baseline trae anchors (ej: grid + selectedRow), generamos variantes SCOPED
+                    for t2, v2, r2, b2, q2 in self._scoped_suffix_locators(tag, suf, base_meta):
+                        locators.append((t2, v2, r2, b2, q2))
         if el_testid:
             locators.append(("css", f"{tag}[data-testid='{el_testid}']", "css por data-testid", 6, "SAFE_TESTID"))
         if el_datacy:
@@ -80,6 +83,51 @@ class SelectorBuilder:
                 locators.append((t, v, r, b, quality))
 
         return self._dedupe(locators)
+
+    # --------------------------------------------------
+    # Scoping: grid + selectedRow (Siebel/jqGrid)
+    # baseline.meta esperado (ej):
+    #   anchor:xpath:grid -> //table[@role='grid' and @datatable='1' ...]
+    #   anchor:css:selectedRow -> tr[aria-selected='true']
+    #   hint:colSuffix -> _Numero_identificacion
+    # --------------------------------------------------
+    def _scoped_suffix_locators(self, tag: str, suf: str, base_meta):
+        out = []
+        if not base_meta:
+            return out
+
+        try:
+            meta = dict(base_meta)
+        except Exception:
+            meta = {}
+
+        grid_xp = meta.get("anchor:xpath:grid") or meta.get("anchor_xpath_grid")  # tolerante
+        selected_css = meta.get("anchor:css:selectedRow") or meta.get("anchor_css_selectedRow")
+        hint_col = meta.get("hint:colSuffix") or meta.get("hint_colSuffix")
+
+        # solo generamos si el sufijo coincide con la intención de columna (si viene)
+        if hint_col and str(hint_col).strip() and (str(suf).strip() != str(hint_col).strip()):
+            return out
+
+        # convertir el selectedRow css simple a xpath
+        selected_xp = None
+        if selected_css:
+            s = str(selected_css).strip()
+            # soporta el caso común: tr[aria-selected='true']
+            if s.startswith("tr[") and "aria-selected" in s:
+                selected_xp = "tr[@aria-selected='true']"
+            elif s == "tr[aria-selected=true]":
+                selected_xp = "tr[@aria-selected='true']"
+
+        if grid_xp and selected_xp:
+            # XPath por sufijo, pero SCOPED al grid y a la fila seleccionada
+            # Nota: usamos el tag específico (td) para evitar capturar headers u otros nodos.
+            suf_esc = self._esc(str(suf))
+            n = len(str(suf)) - 1
+            xp = f"{grid_xp}//{selected_xp}//{tag}[@id and substring(@id,string-length(@id)-{n})='{suf_esc}']"
+            out.append(("xpath", xp, "xpath por id sufijo (scoped grid+selectedRow)", 6, "SCOPED_DYNAMIC_ID_SUFFIX"))
+
+        return out
 
     def _is_stable_id(self, el_id: str) -> bool:
         """Heurística genérica: evita ids con prefijos numéricos/estructurales comunes en Siebel/jqGrid."""
