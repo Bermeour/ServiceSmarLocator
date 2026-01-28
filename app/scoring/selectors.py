@@ -19,6 +19,8 @@ class SelectorBuilder:
         el_datacy = el.get("data-cy")
         el_dataqa = el.get("data-qa")
         el_role = el.get("role")
+        el_display = el.get("data-display")
+        el_title = el.get("title")
 
         tag = (el.name or base_tag or "button").lower().strip()
 
@@ -48,6 +50,10 @@ class SelectorBuilder:
             locators.append(("css", f"{tag}[name='{el_name}']", "css por name", 5, "SAFE_NAME"))
         if el_aria:
             locators.append(("css", f"{tag}[aria-label='{el_aria}']", "css por aria-label", 4, "SAFE_ARIA"))
+        if el_display:
+            locators.append(("css", f"{tag}[data-display='{el_display}']", "css por data-display", 3, "SAFE_DATA_DISPLAY"))
+        if el_title:
+            locators.append(("css", f"{tag}[title='{el_title}']", "css por title", 2, "SAFE_TITLE"))
         if el_role:
             locators.append(("css", f"{tag}[role='{el_role}']", "css por role", 1, "ROLE"))
 
@@ -73,6 +79,10 @@ class SelectorBuilder:
             locators.append(("xpath", f"//*[@name='{self._esc(el_name)}']", "xpath por name", 5, "SAFE_NAME"))
         if el_aria:
             locators.append(("xpath", f"//*[@aria-label='{self._esc(el_aria)}']", "xpath por aria-label", 4, "SAFE_ARIA"))
+        if el_display:
+            locators.append(("xpath", f"//*[@data-display='{self._esc(el_display)}']", "xpath por data-display", 3, "SAFE_DATA_DISPLAY"))
+        if el_title:
+            locators.append(("xpath", f"//*[@title='{self._esc(el_title)}']", "xpath por title", 2, "SAFE_TITLE"))
 
         # fallback advanced + scoped xpath
         if not locators:

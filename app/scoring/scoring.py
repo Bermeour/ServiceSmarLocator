@@ -73,6 +73,30 @@ class ScoreEngine:
                 score += pts
                 reasons.append(f"{label} coincide (+{pts})")
 
+        # 3b) ✅ Atributos enterprise (Siebel / legacy UIs)
+        # data-display: se usa mucho en toolbars y botones (Ej: "Ir", "Cancelar")
+        base_display = (base_attrs or {}).get("data-display")
+        el_display = el.get("data-display")
+        if base_display and el_display and str(base_display) == str(el_display):
+            score += 30
+            reasons.append("data-display coincide (+30)")
+
+        # title: suele ser estable y altamente descriptivo en apps enterprise
+        base_title = (base_attrs or {}).get("title")
+        el_title = el.get("title")
+        if base_title and el_title and str(base_title) == str(el_title):
+            score += 25
+            reasons.append("title coincide (+25)")
+
+        # class~: operador estilo "contains" (tu Baseline lo usa como class~)
+        base_class_contains = (base_attrs or {}).get("class~")
+        if base_class_contains:
+            cls_str = " ".join((el.get("class") or [])).lower()
+            needle = str(base_class_contains).strip().lower()
+            if needle and needle in cls_str:
+                score += 20
+                reasons.append(f"class~ contiene '{needle}' (+20)")
+
         # 4) aria-label
         base_aria = (base_attrs or {}).get("aria-label")
         el_aria = el.get("aria-label")
