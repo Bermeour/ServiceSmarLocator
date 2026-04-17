@@ -1,0 +1,51 @@
+
+# ============================================================
+# app-config.yml — Configuración del servicio repair-ia-locator
+# ============================================================
+
+learning:
+  # Habilita/deshabilita el sistema de aprendizaje completo.
+  # Si es false, el servicio funciona igual que antes (sin DB ni ML).
+  enabled: true
+
+  # Ruta del archivo SQLite donde se guardan requests, feedback y modelos.
+  # Relativa al directorio de ejecución.
+  db_path: "learning.db"
+
+  # ----------------------------------------------------------
+  # Capa 2: Pesos adaptativos por señal
+  # Activa cuando hay suficiente feedback acumulado.
+  # ----------------------------------------------------------
+  adaptive_weights:
+    enabled: true
+
+    # Mínimo de feedbacks exitosos para activar los pesos adaptativos.
+    # Por debajo de este umbral se usan los pesos hardcodeados originales.
+    min_feedbacks: 20
+
+    # Escala del bonus/penalty adaptativo.
+    # Formula: bonus = (precision - 0.5) * precision_scale
+    #   precision = 0.95  →  bonus = +9 pts   (señal muy confiable)
+    #   precision = 0.50  →  bonus =  0 pts   (señal sin datos suficientes)
+    #   precision = 0.20  →  bonus = -6 pts   (señal poco confiable)
+    precision_scale: 20
+
+  # ----------------------------------------------------------
+  # Capa 3: Modelo ML (scikit-learn LogisticRegression)
+  # Activa cuando hay suficientes muestras etiquetadas por app.
+  # ----------------------------------------------------------
+  ml_model:
+    enabled: true
+
+    # Mínimo de muestras etiquetadas por app para entrenar el modelo.
+    min_samples: 100
+
+    # Reentrenar el modelo cada N feedbacks nuevos.
+    retrain_every: 50
+
+    # Factor de mezcla entre score DOM y score ML.
+    #   0.0 = solo DOM (aprendizaje desactivado)
+    #   0.7 = 70% ML + 30% DOM  (recomendado cuando el modelo es maduro)
+    #   1.0 = solo ML
+    blend_factor: 0.7
+

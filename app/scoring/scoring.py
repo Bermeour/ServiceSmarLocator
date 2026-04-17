@@ -1,7 +1,7 @@
 from bs4.element import Tag
 from app.scoring.proximity import proximity_score
 from app.scoring.zones import ZoneHeuristics
-from app.scoring.text_utils import text_contains, normalize_text, is_generic_text
+from app.scoring.text_utils import text_contains, normalize_text, is_generic_text, fuzzy_text_score
 
 
 class ScoreEngine:
@@ -27,11 +27,24 @@ class ScoreEngine:
             "classSignals": [],
             "textHit": False,
             "anchorHits": [],
-            # ✅ Nuevos signals (para 'explain')
             "textContainsMatched": 0,
             "textContainsTotal": 0,
             "intentBonus": 0,
             "metaBonus": 0,
+            # ── Señales booleanas para tracking de aprendizaje ML ──────────
+            # Se usan por el RequestTracker para construir el vector de features.
+            "tag_match": False,
+            "testid_match": False,
+            "datacy_match": False,
+            "dataqa_match": False,
+            "arialabel_match": False,
+            "formcontrol_match": False,
+            "name_match": False,
+            "title_match": False,
+            "datadisplay_match": False,
+            "class_primary": False,
+            "text_exact": False,   # True si el match fue exacto (no fuzzy)
+            "fuzzyScore": 0,       # 0-100: similitud fuzzy del texto
         }
 
         # 0) match de tag (señal fuerte y estable)
@@ -39,6 +52,7 @@ class ScoreEngine:
         base_tag_norm = (base_tag or "").strip().lower()
         if base_tag_norm and el_tag and el_tag == base_tag_norm:
             score += 10
+            meta["tag_match"] = True
             reasons.append("tag coincide (+10)")
 
         # 1) clases
@@ -46,6 +60,7 @@ class ScoreEngine:
         score += cs
         reasons.extend(cr)
         meta["classSignals"] = class_meta.get("classSignals", [])
+        meta["class_primary"] = "primary" in meta["classSignals"]
 
         # 2) zonas/layout penalty
         zs, zr = self.zone.evaluate(el)
@@ -58,8 +73,15 @@ class ScoreEngine:
         el_testid = el.get("data-testid")
         if base_testid and el_testid and base_testid == el_testid:
             score += 60
+            meta["testid_match"] = True
             reasons.append("data-testid coincide (+60)")
 
+        # Mapa atributo → nombre de señal para tracking ML
+        _ATTR_SIGNAL = {
+            "data-cy": "datacy_match", "data-qa": "dataqa_match",
+            "data-testid": "testid_match", "formcontrolname": "formcontrol_match",
+            "name": "name_match",
+        }
         for key, pts, label in [
             ("data-cy", 55, "data-cy"),
             ("data-qa", 55, "data-qa"),
@@ -71,6 +93,7 @@ class ScoreEngine:
             ev = el.get(key)
             if bv and ev and str(bv) == str(ev):
                 score += pts
+                meta[_ATTR_SIGNAL[key]] = True
                 reasons.append(f"{label} coincide (+{pts})")
 
         # 3b) ✅ Atributos enterprise (Siebel / legacy UIs)
@@ -79,6 +102,7 @@ class ScoreEngine:
         el_display = el.get("data-display")
         if base_display and el_display and str(base_display) == str(el_display):
             score += 30
+            meta["datadisplay_match"] = True
             reasons.append("data-display coincide (+30)")
 
         # title: suele ser estable y altamente descriptivo en apps enterprise
@@ -86,6 +110,7 @@ class ScoreEngine:
         el_title = el.get("title")
         if base_title and el_title and str(base_title) == str(el_title):
             score += 25
+            meta["title_match"] = True
             reasons.append("title coincide (+25)")
 
         # class~: operador estilo "contains" (tu Baseline lo usa como class~)
@@ -102,15 +127,28 @@ class ScoreEngine:
         el_aria = el.get("aria-label")
         if base_aria and el_aria and base_aria == el_aria:
             score += 40
+            meta["arialabel_match"] = True
             reasons.append("aria-label coincide (+40)")
 
         # 5) texto visible / texto-usable (inputs, selects, etc.)
         visible_text = self._textish(el)
-        if base_text and visible_text:
-            if not is_generic_text(base_text) and text_contains(visible_text, base_text):
+        if base_text and visible_text and not is_generic_text(base_text):
+            if text_contains(visible_text, base_text):
                 score += 15
                 meta["textHit"] = True
-                reasons.append(f"texto similar '{normalize_text(base_text)}' (+15)")
+                meta["text_exact"] = True
+                reasons.append(f"texto exacto '{normalize_text(base_text)}' (+15)")
+            else:
+                sim = fuzzy_text_score(visible_text, base_text)
+                meta["fuzzyScore"] = sim  # guardamos siempre para ML
+                if sim >= 85:
+                    score += 10
+                    meta["textHit"] = True
+                    reasons.append(f"texto fuzzy {sim}% '{normalize_text(base_text)}' (+10)")
+                elif sim >= 70:
+                    score += 5
+                    meta["textHit"] = True
+                    reasons.append(f"texto fuzzy {sim}% '{normalize_text(base_text)}' (+5)")
 
         # 5b) ✅ textContains (fuerte, AND) - aplica sobre textish
         tc = base_text_contains or []

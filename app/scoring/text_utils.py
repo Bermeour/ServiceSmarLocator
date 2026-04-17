@@ -40,6 +40,23 @@ def text_contains(haystack: str, needle: str) -> bool:
     return n in h
 
 
+def fuzzy_text_score(haystack: str, needle: str) -> int:
+    """
+    Retorna similitud 0-100 entre needle y haystack usando rapidfuzz.
+    Usa partial_ratio para tolerar que needle sea subcadena de haystack.
+    Retorna 0 si rapidfuzz no está disponible.
+    """
+    try:
+        from rapidfuzz import fuzz
+        h = normalize_text(haystack)
+        n = normalize_text(needle)
+        if not h or not n:
+            return 0
+        return int(fuzz.partial_ratio(n, h))
+    except ImportError:
+        return 0
+
+
 def safe_xpath_literal(s: str) -> str:
     """
     Devuelve un literal XPath seguro.

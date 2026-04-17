@@ -1,0 +1,357 @@
+{
+  "info": {
+    "name": "repair-ia-locator",
+    "description": "Colección completa del servicio repair-ia-locator.\n\nEndpoints:\n- POST /repair         → Repara un locator roto, devuelve sugerencias rankeadas\n- POST /feedback       → Envía feedback (positivo o negativo) para el aprendizaje\n- GET  /learning/stats → Observabilidad: estado de las 3 capas de aprendizaje\n\nVariable de entorno: baseUrl = http://localhost:8000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "lastRequestId",
+      "value": "",
+      "type": "string",
+      "description": "Se llena automáticamente con el requestId de la última llamada a /repair"
+    }
+  ],
+  "item": [
+    {
+      "name": "Repair",
+      "description": "Endpoint principal. Recibe el HTML de la página y el baseline del elemento roto, devuelve una lista de locators sugeridos ordenados por score.",
+      "item": [
+        {
+          "name": "01 — Caso normal (data-testid presente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requestId) {",
+                  "    pm.collectionVariables.set('lastRequestId', json.requestId);",
+                  "    console.log('requestId guardado:', json.requestId);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene sugerencias', () => pm.expect(json.suggestions.length).to.be.above(0));",
+                  "pm.test('Top score >= 85', () => pm.expect(json.suggestions[0].score).to.be.at.least(85));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"app\": \"banco-demo\",\n  \"pageHtml\": \"<!doctype html><html><head><title>Banco Demo | Login</title></head><body><header><nav><button class=\\\"btn ghost\\\" id=\\\"btnHeaderLogin\\\" aria-label=\\\"Ingresar header\\\"><span>Ingresar</span></button></nav></header><main><form id=\\\"loginForm\\\"><input id=\\\"user\\\" name=\\\"user\\\" data-testid=\\\"input-user\\\" placeholder=\\\"Usuario\\\" /><input id=\\\"pass\\\" name=\\\"pass\\\" type=\\\"password\\\" data-testid=\\\"input-pass\\\" /><div id=\\\"loginArea\\\"><button type=\\\"button\\\" class=\\\"btn primary\\\" id=\\\"btnLoginMain\\\" aria-label=\\\"Ingresar\\\" data-testid=\\\"btn-login\\\"><span>Ingresar</span></button></div></form></main></body></html>\",\n  \"baseline\": {\n    \"tag\": \"button\",\n    \"text\": \"Ingresar\",\n    \"textContains\": [\"Ingresar\"],\n    \"attrs\": {\n      \"data-testid\": \"btn-login\",\n      \"aria-label\": \"Ingresar\",\n      \"_containerId\": \"loginArea\",\n      \"_formId\": \"loginForm\",\n      \"_excludeIds\": \"btnHeaderLogin,btnHelpLogin,btnContinueTrap\"\n    },\n    \"meta\": {\n      \"businessCase\": \"LOGIN_MAIN\",\n      \"page\": \"login\"\n    }\n  },\n  \"context\": {\n    \"containerId\": \"loginArea\",\n    \"formId\": \"loginForm\",\n    \"excludeIds\": [\"btnHeaderLogin\", \"btnHelpLogin\", \"btnContinueTrap\"]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["repair"]
+            },
+            "description": "Caso ideal: el botón tiene data-testid y aria-label. Espera score >= 85 y selectorQuality SAFE_TESTID o SAFE_ID."
+          }
+        },
+        {
+          "name": "02 — Texto cambiado (sin testid, sin aria)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requestId) pm.collectionVariables.set('lastRequestId', json.requestId);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene sugerencias a pesar del cambio', () => pm.expect(json.suggestions.length).to.be.above(0));",
+                  "if (json.suggestions.length > 0) {",
+                  "    console.log('Top sugerencia:', json.suggestions[0].type, json.suggestions[0].value);",
+                  "    console.log('Score:', json.suggestions[0].score);",
+                  "    console.log('selectorQuality:', json.suggestions[0].meta.selectorQuality);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"app\": \"banco-demo\",\n  \"pageHtml\": \"<!doctype html><html><head><title>Banco Demo | Login</title></head><body><header><nav><button class=\\\"btn ghost\\\" id=\\\"btnHeaderLogin\\\"><span>Ingresar</span></button></nav></header><main><form id=\\\"loginForm\\\"><input id=\\\"user\\\" name=\\\"user\\\" data-testid=\\\"input-user\\\" /><input id=\\\"pass\\\" name=\\\"pass\\\" type=\\\"password\\\" /><div id=\\\"loginArea\\\"><button type=\\\"button\\\" class=\\\"btn primary\\\" id=\\\"btnLoginMain\\\"><span>Acceder ahora</span></button><button type=\\\"button\\\" class=\\\"btn\\\" id=\\\"btnContinueTrap\\\"><span>Continuar</span></button></div></form></main></body></html>\",\n  \"baseline\": {\n    \"tag\": \"button\",\n    \"text\": \"Ingresar\",\n    \"textContains\": [\"Ingresar\"],\n    \"attrs\": {\n      \"data-testid\": \"btn-login\",\n      \"aria-label\": \"Ingresar\",\n      \"_containerId\": \"loginArea\",\n      \"_formId\": \"loginForm\",\n      \"_excludeIds\": \"btnHeaderLogin,btnHelpLogin,btnContinueTrap\"\n    },\n    \"meta\": {\n      \"businessCase\": \"LOGIN_MAIN\",\n      \"page\": \"login\"\n    }\n  },\n  \"context\": {\n    \"containerId\": \"loginArea\",\n    \"formId\": \"loginForm\",\n    \"excludeIds\": [\"btnHeaderLogin\", \"btnHelpLogin\", \"btnContinueTrap\"]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["repair"]
+            },
+            "description": "Simula toggleChange=true + toggleRemoveTestId=true + toggleRemoveAria=true. El texto cambió de 'Ingresar' a 'Acceder ahora' y hay un botón trampa 'Continuar'. El servicio debe encontrar btnLoginMain por su id y contexto."
+          }
+        },
+        {
+          "name": "03 — Con anchors personalizados (css y text)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requestId) pm.collectionVariables.set('lastRequestId', json.requestId);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene sugerencias', () => pm.expect(json.suggestions.length).to.be.above(0));",
+                  "if (json.suggestions[0]) {",
+                  "    var signals = json.suggestions[0].meta.signals || {};",
+                  "    console.log('anchorHits:', signals.anchorHits);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"app\": \"banco-demo\",\n  \"pageHtml\": \"<!doctype html><html><head><title>Banco Demo | Login</title></head><body><header><nav><button class=\\\"btn ghost\\\" id=\\\"btnHeaderLogin\\\"><span>Ingresar</span></button></nav></header><main><form id=\\\"loginForm\\\"><label for=\\\"user\\\">Usuario</label><input id=\\\"user\\\" name=\\\"user\\\" data-testid=\\\"input-user\\\" /><label for=\\\"pass\\\">Contraseña</label><input id=\\\"pass\\\" name=\\\"pass\\\" type=\\\"password\\\" /><div id=\\\"loginArea\\\"><button type=\\\"button\\\" class=\\\"btn primary\\\" id=\\\"btnLoginMain\\\" aria-label=\\\"Ingresar\\\" data-testid=\\\"btn-login\\\"><span>Ingresar</span></button></div></form></main></body></html>\",\n  \"baseline\": {\n    \"tag\": \"button\",\n    \"text\": \"Ingresar\",\n    \"textContains\": [\"Ingresar\"],\n    \"intent\": \"login_main\",\n    \"attrs\": {\n      \"data-testid\": \"btn-login\",\n      \"aria-label\": \"Ingresar\",\n      \"_containerId\": \"loginArea\",\n      \"_formId\": \"loginForm\",\n      \"_excludeIds\": \"btnHeaderLogin,btnHelpLogin\"\n    },\n    \"meta\": {\n      \"businessCase\": \"LOGIN_MAIN\"\n    }\n  },\n  \"context\": {\n    \"containerId\": \"loginArea\",\n    \"formId\": \"loginForm\",\n    \"excludeIds\": [\"btnHeaderLogin\", \"btnHelpLogin\"],\n    \"anchors\": [\n      {\n        \"type\": \"text\",\n        \"value\": \"Usuario\",\n        \"label\": \"label-usuario\",\n        \"weight\": 40\n      },\n      {\n        \"type\": \"css\",\n        \"value\": \"#loginForm\",\n        \"label\": \"form-login\",\n        \"weight\": 60\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["repair"]
+            },
+            "description": "Demuestra anchors por texto ('Usuario') y por CSS ('#loginForm'). Los anchorHits aparecen en meta.signals."
+          }
+        },
+        {
+          "name": "04 — Todos los toggles activados (caso más difícil)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requestId) pm.collectionVariables.set('lastRequestId', json.requestId);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "console.log('Sugerencias encontradas:', json.suggestions.length);",
+                  "json.suggestions.forEach((s, i) => {",
+                  "    console.log(`[${i}] ${s.type}:${s.value} score=${s.score} quality=${s.meta.selectorQuality} mlActive=${s.meta.mlActive}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"app\": \"banco-demo\",\n  \"pageHtml\": \"<!doctype html><html><head><title>Banco Demo | Login</title></head><body><header><nav><button class=\\\"btn ghost\\\" id=\\\"btnHeaderLogin\\\"><span>Ingresar</span></button></nav></header><div id=\\\"helpModal\\\" style=\\\"display:flex\\\"><button class=\\\"btn\\\" id=\\\"btnHelpLogin\\\" aria-label=\\\"Ingresar ayuda\\\"><span>Ingresar</span></button><button class=\\\"btn\\\" id=\\\"btnCloseModal\\\">Cerrar</button></div><main><form id=\\\"loginForm\\\"><input id=\\\"user\\\" name=\\\"user\\\" /><input id=\\\"pass\\\" name=\\\"pass\\\" type=\\\"password\\\" /><div id=\\\"loginArea\\\"><button type=\\\"button\\\" class=\\\"btn primary\\\" id=\\\"btnLoginMain\\\"><span>Acceder ahora</span></button><button type=\\\"button\\\" class=\\\"btn\\\" id=\\\"btnContinueTrap\\\"><span>Continuar</span></button></div></form></main></body></html>\",\n  \"baseline\": {\n    \"tag\": \"button\",\n    \"text\": \"Ingresar\",\n    \"textContains\": [\"Ingresar\"],\n    \"attrs\": {\n      \"data-testid\": \"btn-login\",\n      \"aria-label\": \"Ingresar\",\n      \"_containerId\": \"loginArea\",\n      \"_formId\": \"loginForm\",\n      \"_excludeIds\": \"btnHeaderLogin,btnHelpLogin,btnContinueTrap\"\n    },\n    \"meta\": {\n      \"businessCase\": \"LOGIN_MAIN\",\n      \"page\": \"login\"\n    }\n  },\n  \"context\": {\n    \"containerId\": \"loginArea\",\n    \"formId\": \"loginForm\",\n    \"excludeIds\": [\"btnHeaderLogin\", \"btnHelpLogin\", \"btnContinueTrap\"]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["repair"]
+            },
+            "description": "Caso extremo: texto cambiado ('Acceder ahora'), sin data-testid, sin aria-label, modal visible con trampa, botón 'Continuar' extra. Solo el contexto (containerId + excludeIds) puede salvar la situación."
+          }
+        },
+        {
+          "name": "05 — Con anchor XPath",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requestId) pm.collectionVariables.set('lastRequestId', json.requestId);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"app\": \"banco-demo\",\n  \"pageHtml\": \"<!doctype html><html><head><title>Banco Demo | Login</title></head><body><main><form id=\\\"loginForm\\\"><input id=\\\"user\\\" name=\\\"user\\\" data-testid=\\\"input-user\\\" /><div id=\\\"loginArea\\\"><button type=\\\"button\\\" class=\\\"btn primary\\\" id=\\\"btnLoginMain\\\" aria-label=\\\"Ingresar\\\" data-testid=\\\"btn-login\\\"><span>Ingresar</span></button></div></form></main></body></html>\",\n  \"baseline\": {\n    \"tag\": \"button\",\n    \"text\": \"Ingresar\",\n    \"attrs\": {\n      \"data-testid\": \"btn-login\",\n      \"_containerId\": \"loginArea\"\n    }\n  },\n  \"context\": {\n    \"containerId\": \"loginArea\",\n    \"anchors\": [\n      {\n        \"type\": \"xpath\",\n        \"value\": \"//*[@id='user']\",\n        \"label\": \"input-usuario\",\n        \"weight\": 50\n      }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["repair"]
+            },
+            "description": "Demuestra el anchor tipo XPath. El servicio usa lxml para resolver el XPath y localizar el elemento en el árbol BeautifulSoup."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "description": "Envía al servicio el resultado de usar una sugerencia. Alimenta las Capas 2 y 3 del aprendizaje.",
+      "item": [
+        {
+          "name": "01 — Feedback positivo (sugerencia funcionó)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Status ok', () => pm.expect(json.status).to.eql('ok'));",
+                  "console.log('Feedback registrado para requestId:', json.requestId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{lastRequestId}}\",\n  \"chosenNodeKey\": \"id:btnLoginMain\",\n  \"chosenType\": \"css\",\n  \"chosenValue\": \"#btnLoginMain\",\n  \"success\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedback"]
+            },
+            "description": "Enviar después de ejecutar /repair. Usa la variable {{lastRequestId}} que se llena automáticamente desde los tests de /repair.\n\nchosenNodeKey: el nodeKey de la sugerencia que pasó el probe (viene en meta.nodeKey de la respuesta).\nchosenType / chosenValue: type y value de esa sugerencia."
+          }
+        },
+        {
+          "name": "02 — Feedback negativo (SmartFind falló completamente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Status ok', () => pm.expect(json.status).to.eql('ok'));",
+                  "console.log('Feedback negativo registrado — las señales activas serán penalizadas');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{lastRequestId}}\",\n  \"chosenNodeKey\": \"\",\n  \"chosenType\": \"\",\n  \"chosenValue\": \"\",\n  \"success\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedback"]
+            },
+            "description": "SmartFind agotó todas las sugerencias sin éxito. Se envía success=false y chosenNodeKey vacío.\n\nEfecto en el aprendizaje:\n- Las señales que dispararon en los candidatos evaluados reciben penalización (total_present +1, total_correct +0)\n- El modelo ML NO se reentrena (solo reentrena con feedbacks exitosos)\n- Sirve para que el sistema aprenda qué señales no son confiables en esta app"
+          }
+        },
+        {
+          "name": "03 — Feedback con requestId fijo (ejemplo para explorar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"chosenNodeKey\": \"testid:btn-login\",\n  \"chosenType\": \"css\",\n  \"chosenValue\": \"[data-testid='btn-login']\",\n  \"success\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedback"]
+            },
+            "description": "Ejemplo con requestId hardcodeado para explorar la respuesta. Sustituye el UUID por uno real de una respuesta /repair anterior."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Learning",
+      "description": "Observabilidad del sistema de aprendizaje adaptativo.",
+      "item": [
+        {
+          "name": "GET /learning/stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Status ok', () => pm.expect(json.status).to.eql('ok'));",
+                  "",
+                  "console.log('=== LEARNING STATS ===');",
+                  "console.log('Total feedbacks:', json.total_feedbacks);",
+                  "",
+                  "var aw = json.adaptive_weights;",
+                  "console.log('Adaptive weights activo:', aw.active, '(min:', aw.min_feedbacks, ')');",
+                  "",
+                  "var signals = aw.signals || {};",
+                  "Object.keys(signals).sort((a,b) => signals[b].bonus_pts - signals[a].bonus_pts).forEach(k => {",
+                  "    var s = signals[k];",
+                  "    console.log(`  ${k}: precision=${s.precision} bonus=${s.bonus_pts > 0 ? '+' : ''}${s.bonus_pts}pts (${s.total_correct}/${s.total_present})`);",
+                  "});",
+                  "",
+                  "var ml = json.ml_model;",
+                  "console.log('Modelos ML entrenados:', ml.models.length);",
+                  "ml.models.forEach(m => {",
+                  "    console.log(`  fingerprint=${m.app_fingerprint} samples=${m.training_samples} accuracy=${m.accuracy}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/learning/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["learning", "stats"]
+            },
+            "description": "Devuelve el estado completo de las 3 capas de aprendizaje:\n\n**adaptive_weights**\n- active: true cuando total_feedbacks >= min_feedbacks (default 20)\n- signals: por cada señal → precision, bonus_pts, total_present, total_correct\n  - bonus_pts > 0 → señal confiable para esta app (suma al score)\n  - bonus_pts < 0 → señal poco confiable (resta al score)\n  - bonus_pts = 0 → datos insuficientes aún\n\n**ml_model**\n- models: lista de modelos entrenados por fingerprint de app\n- Se activa cuando hay >= min_samples feedbacks exitosos por app (default 100)\n\nUsar para verificar que el sistema está aprendiendo correctamente."
+          }
+        }
+      ]
+    }
+  ]
+}

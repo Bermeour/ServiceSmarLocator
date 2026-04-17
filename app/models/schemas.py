@@ -58,6 +58,14 @@ class RepairRequest(BaseModel):
     # ✅ default_factory para que siempre exista Context aunque no venga
     context: Context = Field(default_factory=Context)
 
+    # Capturas opcionales para scoring visual local (sin APIs externas)
+    # Formato: base64 raw o data-URL (ej: "data:image/png;base64,...")
+    elementSnapshot: Optional[str] = None  # recorte del elemento objetivo
+    pageSnapshot: Optional[str] = None     # screenshot completo de la página
+
+    # Nombre de la app (enviado por Java via RepairJsonBuilder)
+    app: Optional[str] = None
+
 
 class Suggestion(BaseModel):
     type: str
@@ -70,4 +78,13 @@ class Suggestion(BaseModel):
 
 
 class RepairResponse(BaseModel):
+    requestId: str = ""
     suggestions: List[Suggestion] = Field(default_factory=list)
+
+
+class FeedbackRequest(BaseModel):
+    requestId: str
+    chosenNodeKey: str
+    chosenType: str
+    chosenValue: str
+    success: bool = True

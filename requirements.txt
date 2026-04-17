@@ -3,3 +3,16 @@ uvicorn[standard]==0.30.6
 beautifulsoup4==4.12.3
 lxml==5.2.2
 pydantic==2.8.2
+
+# Visual scoring — local, sin APIs externas, solo wheels de Python
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+
+# Fuzzy text matching para candidatos con texto ligeramente cambiado
+rapidfuzz>=3.0.0
+
+# Lectura de configuración YAML
+pyyaml>=6.0.0
+
+# Modelo ML para aprendizaje adaptativo (Capa 3)
+scikit-learn>=1.3.0

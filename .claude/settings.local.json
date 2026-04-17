@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del:*)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs ls:*)",
+      "Bash(python:*)",
+      "Bash(mvn compile:*)",
+      "Bash(java -version)",
+      "Bash(javac -version)"
+    ]
+  }
+}
