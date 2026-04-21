@@ -45,6 +45,8 @@ class ScoreEngine:
             "class_primary": False,
             "text_exact": False,   # True si el match fue exacto (no fuzzy)
             "fuzzyScore": 0,       # 0-100: similitud fuzzy del texto
+            "role_match": False,
+            "col_suffix_match": False,
         }
 
         # 0) match de tag (señal fuerte y estable)
@@ -104,6 +106,14 @@ class ScoreEngine:
             score += 30
             meta["datadisplay_match"] = True
             reasons.append("data-display coincide (+30)")
+
+        # role: señal media — confirma tipo de elemento en apps enterprise (gridcell, tab, etc.)
+        base_role = (base_attrs or {}).get("role")
+        el_role_val = el.get("role")
+        if base_role and el_role_val and str(base_role).lower() == str(el_role_val).lower():
+            score += 15
+            meta["role_match"] = True
+            reasons.append(f"role coincide '{base_role}' (+15)")
 
         # title: suele ser estable y altamente descriptivo en apps enterprise
         base_title = (base_attrs or {}).get("title")
@@ -192,6 +202,15 @@ class ScoreEngine:
             meta["metaBonus"] = mb
             reasons.append(f"meta bonus (+{mb})")
 
+        # 9) hint:colSuffix — el id del elemento termina con el sufijo esperado (Siebel/jqGrid)
+        col_suffix = str((base_meta or {}).get("hint:colSuffix") or "").strip()
+        if col_suffix:
+            el_id_val = (el.get("id") or "").strip()
+            if el_id_val and el_id_val.lower().endswith(col_suffix.lower()):
+                score += 25
+                meta["col_suffix_match"] = True
+                reasons.append(f"colSuffix '{col_suffix}' en id (+25)")
+
         return score, reasons, meta
 
     def _textish(self, el: Tag) -> str:
@@ -261,6 +280,13 @@ class ScoreEngine:
             field = intent.replace("edit_", "").strip().lower()
             if field and field in el_id:
                 bonus += 12
+
+        # intent "gridcell_*" => celda de grid (Siebel/jqGrid)
+        if intent.startswith("gridcell_"):
+            if tag == "td" and role == "gridcell":
+                bonus += 12
+            elif tag == "td":
+                bonus += 5
 
         # intent estilo "tab_*" o "nav_*" => navegación
         if intent.startswith("tab_") or intent.startswith("nav_"):

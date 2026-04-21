@@ -110,7 +110,12 @@ class AdvancedSelectorBuilder:
         """
         bad_prefixes = ("ng-", "css-", "sc-", "styled", "chakra", "mui", "ant", "css")
         bad_exact = {
-            "active", "disabled", "focus", "hover", "selected", "ng-star-inserted"
+            "active", "disabled", "focus", "hover", "selected", "ng-star-inserted",
+            # jqGrid / Siebel: presentes en todos los nodos, no aportan especificidad
+            "ui-widget-content", "ui-widget", "ui-state-default", "ui-state-active",
+            "ui-corner-all", "ui-jqgrid-btable", "odd", "even", "jqgrow", "ui-row-ltr",
+            # Bootstrap genérico
+            "row", "col", "container", "form-control", "form-group",
         }
 
         good = []

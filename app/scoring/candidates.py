@@ -62,6 +62,16 @@ class CandidateProvider:
             add_all(soup.find_all("select"))
             return out
 
+        if base_tag == "textarea":
+            add_all(soup.find_all("textarea"))
+            return out
+
+        if base_tag == "label":
+            add_all(soup.find_all("label"))
+            # spans con role=label o que actúan como label en apps SPA
+            add_all(soup.find_all("span", attrs={"role": "label"}))
+            return out
+
         if base_tag == "li":
             add_all(soup.find_all("li"))
             for role in _ROLE_OPTION_VALUES:

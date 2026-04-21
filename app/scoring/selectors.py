@@ -54,7 +54,9 @@ class SelectorBuilder:
             locators.append(("css", f"{tag}[data-display='{el_display}']", "css por data-display", 3, "SAFE_DATA_DISPLAY"))
         if el_title:
             locators.append(("css", f"{tag}[title='{el_title}']", "css por title", 2, "SAFE_TITLE"))
-        if el_role:
+        # role: solo si es un valor semánticamente específico y poco frecuente en la página
+        _BROAD_ROLES = {"gridcell", "button", "option", "row", "cell", "presentation", "none"}
+        if el_role and el_role.lower() not in _BROAD_ROLES:
             locators.append(("css", f"{tag}[role='{el_role}']", "css por role", 1, "ROLE"))
 
         # ==============
@@ -111,33 +113,61 @@ class SelectorBuilder:
         except Exception:
             meta = {}
 
-        grid_xp = meta.get("anchor:xpath:grid") or meta.get("anchor_xpath_grid")  # tolerante
+        grid_xp = meta.get("anchor:xpath:grid") or meta.get("anchor_xpath_grid")
         selected_css = meta.get("anchor:css:selectedRow") or meta.get("anchor_css_selectedRow")
         hint_col = meta.get("hint:colSuffix") or meta.get("hint_colSuffix")
+        container_class = meta.get("containerClass") or ""
 
         # solo generamos si el sufijo coincide con la intención de columna (si viene)
         if hint_col and str(hint_col).strip() and (str(suf).strip() != str(hint_col).strip()):
             return out
 
-        # convertir el selectedRow css simple a xpath
+        # convertir el selectedRow css a xpath y mantener css normalizado
         selected_xp = None
+        selected_css_norm = None
         if selected_css:
             s = str(selected_css).strip()
-            # soporta el caso común: tr[aria-selected='true']
-            if s.startswith("tr[") and "aria-selected" in s:
+            if "aria-selected" in s:
                 selected_xp = "tr[@aria-selected='true']"
-            elif s == "tr[aria-selected=true]":
-                selected_xp = "tr[@aria-selected='true']"
+                selected_css_norm = "tr[aria-selected='true']"
+            elif "ui-state-highlight" in s:
+                selected_xp = "tr[contains(@class,'ui-state-highlight')]"
+                selected_css_norm = "tr.ui-state-highlight"
+            elif s.startswith("tr.") and len(s) > 3:
+                cls = s[3:].strip()
+                selected_xp = f"tr[contains(@class,'{self._esc(cls)}')]"
+                selected_css_norm = s
+            elif s.startswith("tr[") and "aria-selected" not in s:
+                # fallback genérico: tomar como xpath equivalente
+                selected_xp = s.replace("[", "[@").replace("=true]", "='true']") if "=" in s else None
+                selected_css_norm = s
 
+        suf_esc = self._esc(str(suf))
+        n = len(str(suf)) - 1
+
+        # XPath scoped al grid + fila seleccionada
         if grid_xp and selected_xp:
-            # XPath por sufijo, pero SCOPED al grid y a la fila seleccionada
-            # Nota: usamos el tag específico (td) para evitar capturar headers u otros nodos.
-            suf_esc = self._esc(str(suf))
-            n = len(str(suf)) - 1
             xp = f"{grid_xp}//{selected_xp}//{tag}[@id and substring(@id,string-length(@id)-{n})='{suf_esc}']"
             out.append(("xpath", xp, "xpath por id sufijo (scoped grid+selectedRow)", 6, "SCOPED_DYNAMIC_ID_SUFFIX"))
 
+        # CSS scoped: más compatible con Selenium/WebDriver
+        # Usa containerClass del meta si viene, si no intenta parsear grid_xp para extraer clase
+        if selected_css_norm:
+            grid_css_class = self._extract_class_from_xpath(grid_xp or "") or container_class
+            if grid_css_class:
+                # ej: .ui-jqgrid-btable tr[aria-selected='true'] td[id$='_Last_Name']
+                css_suf = f".{grid_css_class.lstrip('.')} {selected_css_norm} {tag}[id$='{suf_esc}']"
+                out.append(("css", css_suf, "css por id sufijo (scoped grid+selectedRow)", 6, "SCOPED_DYNAMIC_ID_SUFFIX"))
+
         return out
+
+    def _extract_class_from_xpath(self, grid_xp: str) -> str:
+        """Extrae la primera clase de un XPath con contains(@class,'...')."""
+        import re
+        if not grid_xp:
+            return ""
+        m = re.search(r"contains\(@class\s*,\s*['\"]([^'\"]+)['\"]", grid_xp)
+        return m.group(1) if m else ""
 
     def _is_stable_id(self, el_id: str) -> bool:
         """Heurística genérica: evita ids con prefijos numéricos/estructurales comunes en Siebel/jqGrid."""
@@ -149,9 +179,9 @@ class SelectorBuilder:
             return False
         if s.startswith("s_") and any(p in s for p in ["_l_", "_icon", "_ctl", "_sctrl_"]):
             return False
-        # muchos guiones bajos con números suele ser dinámico
+        # IDs con 4+ dígitos y 2+ guiones bajos suelen ser dinámicos (ej: row_12_data, s_1_2_btn)
         digits = sum(ch.isdigit() for ch in s)
-        if digits >= 4 and s.count("_") >= 3:
+        if digits >= 4 and s.count("_") >= 2:
             return False
         return True
 

@@ -3,9 +3,23 @@ from app.models.schemas import Context
 
 
 def is_inside_container(el: Tag, container_id: str) -> bool:
+    """
+    Busca un ancestro cuyo id sea exactamente container_id.
+    Si container_id parece dinámico (empieza con dígito o tiene muchos _),
+    acepta también match por sufijo para tolerar cambios de prefijo.
+    """
+    if not container_id:
+        return True
+    # heurística: id dinámico si empieza con dígito o tiene >=3 guiones bajos con números
+    digits_in_id = sum(ch.isdigit() for ch in container_id)
+    is_dynamic = container_id[0].isdigit() or (digits_in_id >= 2 and container_id.count("_") >= 3)
+
     parent = el
     while parent is not None:
-        if getattr(parent, "attrs", None) and parent.attrs.get("id") == container_id:
+        parent_id = (getattr(parent, "attrs", None) or {}).get("id") or ""
+        if parent_id == container_id:
+            return True
+        if is_dynamic and parent_id and parent_id.endswith(container_id.lstrip("0123456789_")):
             return True
         parent = parent.parent
     return False

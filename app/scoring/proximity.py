@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 from bs4.element import Tag
 
 
-def dom_distance(a: Optional[Tag], b: Optional[Tag], max_depth: int = 60) -> int:
+def dom_distance(a: Optional[Tag], b: Optional[Tag], max_depth: int = 120) -> int:
     """
     Distancia simple en el DOM:
     suma de los pasos desde a -> LCA + b -> LCA
@@ -23,10 +23,10 @@ def dom_distance(a: Optional[Tag], b: Optional[Tag], max_depth: int = 60) -> int
     if not a_anc or not b_anc:
         return 999
 
-    b_set = set(b_anc)
+    b_index = {id(node): j for j, node in enumerate(b_anc)}
     for i, node in enumerate(a_anc):
-        if node in b_set:
-            j = b_anc.index(node)
+        j = b_index.get(id(node))
+        if j is not None:
             return i + j
 
     return 999

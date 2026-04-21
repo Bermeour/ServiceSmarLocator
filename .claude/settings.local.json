@@ -7,7 +7,11 @@
       "Bash(python:*)",
       "Bash(mvn compile:*)",
       "Bash(java -version)",
-      "Bash(javac -version)"
+      "Bash(javac -version)",
+      "Bash(python3)",
+      "Bash(python3 -c ':*)",
+      "Bash(grep -r \"^class\\\\|^def \" app/*.py app/*/*.py)",
+      "Bash(python3 -c \"import app.services.repair_service\")"
     ]
   }
 }

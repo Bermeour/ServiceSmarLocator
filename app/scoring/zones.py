@@ -31,9 +31,9 @@ class ZoneHeuristics:
         text = (el.get_text(strip=True) or "").lower()
 
         # clases comunes de botones trampa
+        # Nota: "secondary", "icon", "link" se omiten — son válidos en apps enterprise
         trap_classes = {
-            "ghost", "secondary", "icon", "link",
-            "close", "dismiss", "cancel",
+            "ghost", "close", "dismiss", "cancel",
             "navbar", "header", "topbar"
         }
 
@@ -42,8 +42,12 @@ class ZoneHeuristics:
             reasons.append("clase tipo trampa (-10)")
 
         # señales textuales de cerrar/cancelar
-        trap_words = ["cerrar", "close", "cancelar", "cancel", "dismiss", "x"]
-        if any(w in text for w in trap_words) or any(w in aria for w in trap_words):
+        # "x" se verifica como texto exacto (no substring) para evitar falsos positivos
+        # con palabras como "exportar", "texto", "index", etc.
+        trap_words = ["cerrar", "close", "cancelar", "cancel", "dismiss"]
+        trap_exact = {"x", "×", "✕"}
+        if (any(w in text for w in trap_words) or any(w in aria for w in trap_words)
+                or text in trap_exact or aria in trap_exact):
             score -= 10
             reasons.append("texto/aria tipo cerrar/cancel (-10)")
 
