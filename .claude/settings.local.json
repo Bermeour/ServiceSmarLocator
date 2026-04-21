@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+<<<<<<< HEAD
       "Bash(del:*)",
       "Bash(xargs grep:*)",
       "Bash(xargs ls:*)",
@@ -12,6 +13,9 @@
       "Bash(python3 -c ':*)",
       "Bash(grep -r \"^class\\\\|^def \" app/*.py app/*/*.py)",
       "Bash(python3 -c \"import app.services.repair_service\")"
+=======
+      "Bash(.venv/Scripts/python.exe -c ':*)"
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
     ]
   }
 }

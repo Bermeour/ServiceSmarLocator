@@ -13,10 +13,17 @@ from app.scoring.validator import LocatorValidator
 from app.scoring.candidates import CandidateProvider
 from app.scoring.diversity import SuggestionDiversifier, NodeGroup, SuggestionItem
 from app.scoring.text_utils import normalize_text
+<<<<<<< HEAD
 from app.scoring.visual_scorer import VisualProfile, VisualScorer
 from app.learning.tracker import RequestTracker, TRACKED_SIGNALS
 
 log = logging.getLogger(__name__)
+=======
+from app.learning.weight_adapter import get_multipliers
+from app.learning.similarity import find_similar_repairs
+from app.learning.feedback_store import save_repair, save_suggestions
+from app.learning.session_manager import get_session_quality_stats, increment_session_repairs
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
 
 
 class RepairService:
@@ -71,10 +78,11 @@ class RepairService:
 
         base_tag = (req.baseline.tag or "button").strip()
         base_text = (req.baseline.text or "").strip()
-        base_intent = (getattr(req.baseline, "intent", None) or "").strip()
-        base_text_contains = list(getattr(req.baseline, "textContains", None) or [])
-        base_meta = dict(getattr(req.baseline, "meta", None) or {})
+        base_intent = (req.baseline.intent or "").strip()
+        base_text_contains = list(req.baseline.textContains or [])
+        base_meta = dict(req.baseline.meta or {})
         base_attrs = req.baseline.attrs or {}
+<<<<<<< HEAD
         app_name = (req.app or "").strip()
 
         ctx = req.context
@@ -99,6 +107,24 @@ class RepairService:
             print(">>> ANCHORS_RESOLVED:", [(lbl, w) for _, lbl, w in anchors])
         except Exception:
             pass
+=======
+        session_id = req.session_id
+        app_domain = req.app_domain or "global"
+
+        ctx = req.context
+        anchors = self.anchor_resolver.resolve(soup=soup, base_text=base_text, context=ctx)
+
+        # ---- Aprendizaje: pesos adaptativos + similitud ----
+        session_stats = get_session_quality_stats(session_id) if session_id else {}
+        multipliers = get_multipliers(app_domain=app_domain, session_stats=session_stats)
+
+        similar = find_similar_repairs(base_tag, base_text, base_intent)
+        # max +15 puntos por similitud con reparaciones pasadas exitosas
+        similarity_boost = {
+            s["selector_quality"]: int(s["similarity"] * 15)
+            for s in similar
+        }
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
 
         # ── Capa 2: bonuses adaptativos ───────────────────────────────────────
         adaptive_bonuses: dict = {}
@@ -198,13 +224,24 @@ class RepairService:
             for loc_type, loc_value, extra_reason, extra_bonus, selector_quality in locators:
 
                 v = self.validator.validate(
+<<<<<<< HEAD
                     soup=soup, raw_html=req.pageHtml,
                     locator_type=loc_type, locator_value=loc_value
+=======
+                    soup=soup,
+                    raw_html=req.pageHtml,
+                    locator_type=loc_type,
+                    locator_value=loc_value,
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
                 )
                 if not v.ok:
                     continue
 
-                final_score = int(score + (extra_bonus or 0) + (v.bonus or 0))
+                # Aplicar multiplicador aprendido sobre el bonus del selector
+                quality_mult = multipliers.get(selector_quality, 1.0)
+                sim_boost = similarity_boost.get(selector_quality, 0)
+                adjusted_bonus = int((extra_bonus or 0) * quality_mult)
+                final_score = int(score + adjusted_bonus + (v.bonus or 0) + sim_boost)
 
                 meta = {
                     "nodeKey": node_key,
@@ -214,12 +251,17 @@ class RepairService:
                     "context": {
                         "containerId": getattr(ctx, "containerId", None),
                         "formId": getattr(ctx, "formId", None),
-                        "excludeIdsCount": len(getattr(ctx, "excludeIds", []) or [])
+                        "excludeIdsCount": len(ctx.excludeIds or []),
                     },
                     "uniqueness": {
                         "matches": v.matches,
                         "bonus": v.bonus,
-                        "note": v.note
+                        "note": v.note,
+                    },
+                    "learning": {
+                        "qualityMultiplier": quality_mult,
+                        "similarityBoost": sim_boost,
+                        "appDomain": app_domain,
                     },
                     "signals": {
                         "zonePenalty": signals.get("zonePenalty", 0),
@@ -233,15 +275,20 @@ class RepairService:
                         "baselineIntent": base_intent,
                         "baselineTextContains": base_text_contains,
                         "baselineMeta": base_meta,
+<<<<<<< HEAD
                         "visualBonus": signals.get("visualBonus", 0),
                         "visualColor": signals.get("visualColor", ""),
                         "visualZone": signals.get("visualZone", ""),
                         "adaptiveBonus": signals.get("adaptiveBonus", 0),
                     }
+=======
+                    },
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
                 }
 
                 group_items.append(
                     SuggestionItem(
+<<<<<<< HEAD
                         type=loc_type, value=loc_value, score=final_score,
                         reason=" | ".join(reasons + [
                             f"{extra_reason} (+{extra_bonus})", f"unicidad: {v.note}"
@@ -249,6 +296,21 @@ class RepairService:
                     )
                 )
                 group_items[-1].__dict__["meta"] = meta
+=======
+                        type=loc_type,
+                        value=loc_value,
+                        score=final_score,
+                        reason=" | ".join(
+                            reasons
+                            + [
+                                f"{extra_reason} (+{adjusted_bonus})",
+                                f"unicidad: {v.note}",
+                            ]
+                        ),
+                        meta=meta,
+                    )
+                )
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
 
             if group_items:
                 node_groups.append(NodeGroup(node_key=node_key, suggestions=group_items))
@@ -269,12 +331,18 @@ class RepairService:
 
         final_suggestions: list[Suggestion] = []
         for s in diversified:
-            meta = getattr(s, "meta", {})
             final_suggestions.append(
-                Suggestion(type=s.type, value=s.value, score=s.score, reason=s.reason, meta=meta)
+                Suggestion(
+                    type=s.type,
+                    value=s.value,
+                    score=s.score,
+                    reason=s.reason,
+                    meta=s.meta,
+                )
             )
 
         final_suggestions.sort(key=lambda s: s.score, reverse=True)
+<<<<<<< HEAD
         return RepairResponse(requestId=request_id, suggestions=final_suggestions[:10])
 
     # ── feedback ──────────────────────────────────────────────────────────────
@@ -371,6 +439,33 @@ class RepairService:
             return {"status": "error", "detail": str(exc)}
 
     # ── helpers ───────────────────────────────────────────────────────────────
+=======
+        top = final_suggestions[:10]
+
+        # ---- Persistir para aprendizaje futuro ----
+        repair_id = save_repair(session_id, req.pageHtml, base_tag, base_text, base_intent)
+        if session_id:
+            increment_session_repairs(session_id)
+
+        suggestion_records = [
+            {
+                "type": s.type,
+                "value": s.value,
+                "score": s.score,
+                "selector_quality": s.meta.get("selectorQuality"),
+                "rank": i,
+            }
+            for i, s in enumerate(top)
+        ]
+        suggestion_ids = save_suggestions(repair_id, session_id, suggestion_records)
+
+        # Inyectar IDs en meta para que el cliente pueda enviar feedback
+        for s, sid in zip(top, suggestion_ids):
+            s.meta["suggestionId"] = sid
+            s.meta["repairId"] = repair_id
+
+        return RepairResponse(suggestions=top, repair_id=repair_id)
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
 
     def _node_key(self, el, base_tag: str) -> str:
         el_id = el.get("id")
@@ -384,6 +479,10 @@ class RepairService:
             return f"aria:{normalize_text(aria)}"
         tag = (el.name or base_tag or "button").lower().strip()
         txt = normalize_text(el.get_text(strip=True) or "")
+<<<<<<< HEAD
         cls = el.get("class") or []
         cls = [c.lower() for c in cls][:2]
+=======
+        cls = [c.lower() for c in (el.get("class") or [])][:2]
+>>>>>>> be7d4dfb52b608334adb987da85aab23e3186faa
         return f"fallback:{tag}|{txt[:30]}|{' '.join(cls)}"
