@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import List, Tuple, Set
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Tuple, Set
 
 
 @dataclass
@@ -8,6 +8,7 @@ class SuggestionItem:
     value: str
     score: int
     reason: str
+    meta: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

@@ -2,19 +2,7 @@ from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
-# -------------------------
-# AnchorSpec (Opción 2)
-# -------------------------
 class AnchorSpec(BaseModel):
-    """
-    Ancla personalizada enviada por el cliente (Java).
-    type:
-      - "id": busca un elemento con ese id en el DOM
-      - "text": busca un nodo cuyo texto contenga value (case/space-insensitive)
-    weight:
-      - peso relativo para proximidad (0..200 recomendado)
-    """
-    # ✅ Ampliado: css/xpath para anchors más expresivos (multi-app)
     type: Literal["id", "text", "css", "xpath"] = Field(...)
     value: str = Field(..., min_length=1)
     label: Optional[str] = None
@@ -24,16 +12,9 @@ class AnchorSpec(BaseModel):
 class Baseline(BaseModel):
     tag: Optional[str] = None
     text: Optional[str] = None
-    # ✅ NUEVO: intención funcional (ej: permissions_error_message)
     intent: Optional[str] = None
-
-    # ✅ NUEVO: fragmentos de texto requeridos (contains, AND)
     textContains: List[str] = Field(default_factory=list)
-
-    # ✅ NUEVO: metadatos de negocio (severity, businessCase, etc.)
     meta: Dict[str, str] = Field(default_factory=dict)
-
-    # ✅ pon default_factory para evitar None checks infinitos
     attrs: Dict[str, str] = Field(default_factory=dict)
 
 
@@ -41,22 +22,19 @@ class Context(BaseModel):
     containerId: Optional[str] = None
     containerClass: Optional[str] = None
     formId: Optional[str] = None
-
-    # ✅ default_factory evita None
     excludeIds: List[str] = Field(default_factory=list)
-
-    # ✅ NUEVO: anchors custom
     anchors: List[AnchorSpec] = Field(default_factory=list)
 
 
 class RepairRequest(BaseModel):
     class Config:
-        extra = "ignore"   # mantiene tu compatibilidad
+        extra = "ignore"
 
     pageHtml: str
     baseline: Baseline
-    # ✅ default_factory para que siempre exista Context aunque no venga
     context: Context = Field(default_factory=Context)
+    session_id: Optional[str] = None
+    app_domain: Optional[str] = None
 
 
 class Suggestion(BaseModel):
@@ -64,10 +42,40 @@ class Suggestion(BaseModel):
     value: str
     score: int
     reason: str
-
-    # ✅ Paso 10: meta (usa default_factory, no {})
     meta: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RepairResponse(BaseModel):
     suggestions: List[Suggestion] = Field(default_factory=list)
+    repair_id: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Sesiones
+# ---------------------------------------------------------------------------
+
+class SessionCreateRequest(BaseModel):
+    app_domain: Optional[str] = None
+
+
+class SessionResponse(BaseModel):
+    session_id: str
+    created_at: str
+    app_domain: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Feedback
+# ---------------------------------------------------------------------------
+
+class FeedbackRequest(BaseModel):
+    suggestion_id: str
+    session_id: Optional[str] = None
+    success: bool
+    app_domain: Optional[str] = None
+
+
+class FeedbackResponse(BaseModel):
+    ok: bool
+    selector_quality: Optional[str] = None
+    new_multiplier: Optional[float] = None
